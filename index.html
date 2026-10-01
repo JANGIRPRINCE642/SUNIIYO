@@ -3,20 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Suniiyo Music - Streaming Engine</title>
+  <title>Suniiyo Music - Live YouTube Engine</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
     body { background-color: #121212; color: #ffffff; padding-bottom: 220px; }
     
-    /* Header & Search */
     header { background-color: #000000; padding: 20px; text-align: center; border-bottom: 1px solid #282828; }
     header h1 { color: #1db954; font-size: 28px; }
     header p { color: #b3b3b3; font-size: 14px; margin-top: 5px; margin-bottom: 15px; }
 
-    /* Search Bar Styling */
+    .search-container { display: flex; justify-content: center; gap: 10px; max-width: 600px; margin: 0 auto; }
     .search-box {
       width: 100%;
-      max-width: 500px;
       padding: 12px 20px;
       border-radius: 25px;
       border: 2px solid #1db954;
@@ -24,26 +22,29 @@
       color: #fff;
       font-size: 15px;
       outline: none;
-      transition: 0.3s;
     }
-    .search-box:focus { background: #222; box-shadow: 0 0 10px rgba(29, 185, 84, 0.5); }
+    .search-btn {
+      background: #1db954;
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .search-btn:hover { background: #1ed760; }
 
-    /* Main Container */
     .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
-    
-    /* Genre Section */
-    .genre-title { font-size: 22px; margin: 25px 0 15px 0; color: #1db954; border-left: 4px solid #1db954; padding-left: 10px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+    .section-title { font-size: 20px; margin: 20px 0; color: #1db954; border-left: 4px solid #1db954; padding-left: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
 
-    /* Song Card */
-    .card { background: #181818; padding: 15px; border-radius: 8px; border: 1px solid #282828; display: flex; flex-direction: column; justify-content: space-between; }
+    .card { background: #181818; padding: 12px; border-radius: 8px; border: 1px solid #282828; display: flex; flex-direction: column; justify-content: space-between; }
     .card:hover { background: #282828; }
-    .card h3 { font-size: 16px; margin-bottom: 5px; }
-    .card p { color: #b3b3b3; font-size: 13px; margin-bottom: 15px; }
-    .play-btn { background-color: #1db954; color: white; border: none; padding: 10px; border-radius: 20px; cursor: pointer; font-weight: bold; width: 100%; }
-    .play-btn:hover { background-color: #1ed760; }
+    .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 10px; }
+    .card h3 { font-size: 14px; margin-bottom: 5px; height: 36px; overflow: hidden; }
+    .card p { color: #b3b3b3; font-size: 12px; margin-bottom: 10px; }
+    .play-btn { background-color: #1db954; color: white; border: none; padding: 8px; border-radius: 20px; cursor: pointer; font-weight: bold; width: 100%; }
 
-    /* Bottom Player Bar */
     .player-bar { 
       position: fixed; 
       bottom: 0; 
@@ -56,94 +57,57 @@
       justify-content: space-between; 
       align-items: center; 
       z-index: 1000; 
-      box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
       gap: 15px;
     }
 
-    .mini-info { display: flex; align-items: center; gap: 12px; cursor: pointer; min-width: 180px; }
-    .mini-thumb { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 1px solid #333; }
-    .song-info h4 { color: #1db954; font-size: 14px; }
-    .song-info p { color: #aaaaaa; font-size: 12px; }
+    .mini-info { display: flex; align-items: center; gap: 12px; min-width: 180px; }
+    .mini-thumb { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }
+    .song-info h4 { color: #1db954; font-size: 13px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-info p { color: #aaaaaa; font-size: 11px; }
 
-    /* Player Controls & Seek Bar */
     .player-middle { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-grow: 1; max-width: 500px; }
     .player-controls { display: flex; align-items: center; gap: 8px; }
-    .control-btn { 
-      background: #282828; 
-      color: #fff; 
-      border: 1px solid #333; 
-      padding: 6px 12px; 
-      border-radius: 20px; 
-      cursor: pointer; 
-      font-size: 11px;
-      font-weight: bold;
-    }
+    .control-btn { background: #282828; color: #fff; border: 1px solid #333; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: bold; }
     .control-btn.play-toggle { background: #1db954; color: #000; font-size: 14px; padding: 6px 16px; }
-    .control-btn.active { background: #1db954; color: #000; border-color: #1db954; }
 
     .seek-container { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 11px; color: #aaa; }
     .seek-bar { flex-grow: 1; accent-color: #1db954; cursor: pointer; }
 
-    /* Right Audio Controls */
-    .volume-box { display: flex; align-items: center; gap: 8px; }
-    .volume-slider { width: 70px; accent-color: #1db954; cursor: pointer; }
-
-    /* Hidden YouTube Player Screen */
-    .player-screen { width: 1px; height: 1px; opacity: 0; overflow: hidden; position: absolute; }
-
-    /* Full-Screen Overlay Player */
-    .full-player-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 2000;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .full-player-overlay.open { display: flex; }
-    .close-btn { position: absolute; top: 20px; right: 25px; font-size: 30px; color: #fff; cursor: pointer; }
-    .full-thumb { width: 240px; height: 240px; border-radius: 12px; object-fit: cover; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-    .full-title { font-size: 22px; color: #1db954; margin-bottom: 5px; text-align: center; }
-    .full-artist { font-size: 16px; color: #aaa; margin-bottom: 25px; text-align: center; }
+    .player-screen { width: 1px; height: 1px; opacity: 0; position: absolute; }
   </style>
 </head>
 <body>
 
   <header>
     <h1>Suniiyo Music</h1>
-    <p>Ad-Free Music • Haryanvi | Punjabi | Hindi | Rajasthani</p>
-    <input type="text" id="search-input" class="search-box" placeholder="🔍 Search songs or singers..." onkeyup="filterSongs()">
+    <p>Search & Stream Any Song from YouTube Live</p>
+    <div class="search-container">
+      <input type="text" id="search-input" class="search-box" placeholder="🔍 Search any song or singer (e.g. Sidhu Moosewala, Diler Kharkiya)..." onkeydown="if(event.key==='Enter') searchYouTube()">
+      <button class="search-btn" onclick="searchYouTube()">Search</button>
+    </div>
   </header>
 
-  <div class="container" id="songs-container">
-    <!-- Dynamic Songs rendered via JS -->
+  <div class="container">
+    <div class="section-title" id="results-title">🔥 Trending Hits</div>
+    <div class="grid" id="songs-grid">
+      <!-- Search Results Dynamic Here -->
+    </div>
   </div>
 
-  <!-- Bottom Player Bar -->
   <div class="player-bar">
-    <div class="mini-info" onclick="openFullPlayer()">
-      <img id="mini-img" class="mini-thumb" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&auto=format&fit=crop&q=60" alt="Cover">
+    <div class="mini-info">
+      <img id="mini-img" class="mini-thumb" src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100" alt="Cover">
       <div class="song-info">
         <h4 id="song-title">Select a Song</h4>
-        <p id="artist-name">Click for Full Player</p>
+        <p id="artist-name">Suniiyo Player</p>
       </div>
     </div>
 
     <div class="player-middle">
       <div class="player-controls">
-        <button class="control-btn" id="shuffle-btn" onclick="toggleShuffle()">🔀</button>
         <button class="control-btn" onclick="skipTime(-10)">⏪ 10s</button>
-        <button class="control-btn" onclick="playPrevious()">⏮</button>
         <button class="control-btn play-toggle" id="main-play-btn" onclick="togglePlayPause()">▶</button>
-        <button class="control-btn" onclick="playNext()">⏭</button>
         <button class="control-btn" onclick="skipTime(10)">10s ⏩</button>
-        <button class="control-btn" id="repeat-btn" onclick="toggleRepeat()">🔁</button>
       </div>
 
       <div class="seek-container">
@@ -153,274 +117,145 @@
       </div>
     </div>
 
-    <div class="volume-box">
-      <button class="control-btn" id="mute-btn" onclick="toggleMute()">🔊</button>
-      <input type="range" id="volume-bar" class="volume-slider" value="100" max="100" onchange="setVolume(this.value)">
-    </div>
-
     <div class="player-screen">
       <div id="player"></div>
     </div>
   </div>
 
-  <!-- Full Screen Player Modal -->
-  <div class="full-player-overlay" id="full-player">
-    <span class="close-btn" onclick="closeFullPlayer()">✕</span>
-    <img id="full-img" class="full-thumb" src="" alt="Album Cover">
-    <h2 id="full-title" class="full-title">Song Title</h2>
-    <p id="full-artist" class="full-artist">Artist Name</p>
-
-    <div class="seek-container" style="max-width: 400px; margin-bottom: 20px;">
-      <input type="range" class="seek-bar" id="full-seek-bar" value="0" max="100" onchange="seekToTime(this.value)">
-    </div>
-
-    <div class="player-controls">
-      <button class="control-btn" style="padding: 10px 16px;" onclick="skipTime(-10)">⏪ 10s</button>
-      <button class="control-btn" style="padding: 10px 16px;" onclick="playPrevious()">⏮ Prev</button>
-      <button class="control-btn play-toggle" id="full-play-btn" style="padding: 10px 24px; font-size: 16px;" onclick="togglePlayPause()">▶</button>
-      <button class="control-btn" style="padding: 10px 16px;" onclick="playNext()">⏭ Next</button>
-      <button class="control-btn" style="padding: 10px 16px;" onclick="skipTime(10)">10s ⏩</button>
-    </div>
-  </div>
-
   <script>
-    const playlist = [
-      // 🔥 HARYANVI HITS
-      { id: '1k8craCGpgs', title: 'Gypsy', artist: 'GD Kaur / Pranjal Dahiya', genre: '🔥 Haryanvi Hits', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300' },
-      { id: 'CZzb6eDoj2A', title: '52 Gaj Ka Daman', artist: 'Renuka Panwar', genre: '🔥 Haryanvi Hits', img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300' },
-      { id: 'O33x43Z1V6Y', title: 'Moto', artist: 'Diler Kharkiya', genre: '🔥 Haryanvi Hits', img: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300' },
-
-      // ⚡ PUNJABI HITS
-      { id: 'cl0a3i9s1G0', title: 'Softly', artist: 'Karan Aujla', genre: '⚡ Punjabi Hits', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' },
-      { id: 'vX2cDW8LUWk', title: 'Elevated', artist: 'Shubh', genre: '⚡ Punjabi Hits', img: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300' },
-      { id: 'hD0G-84T68U', title: 'Lover', artist: 'Diljit Dosanjh', genre: '⚡ Punjabi Hits', img: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300' },
-
-      // ❤️ HINDI / BOLLYWOOD
-      { id: 'BddP6PYo2gs', title: 'Kesariya', artist: 'Arijit Singh', genre: '❤️ Hindi / Bollywood', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300' },
-      { id: 'UMb8893N1oU', title: 'Tum Hi Ho', artist: 'Arijit Singh', genre: '❤️ Hindi / Bollywood', img: 'https://images.unsplash.com/photo-1445985543470-41fba5c3144a?w=300' },
-
-      // 🪕 RAJASTHANI HITS
-      { id: '8S_4xP38tJk', title: 'Choudhary', artist: 'Mame Khan', genre: '🪕 Rajasthani Hits', img: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300' }
-    ];
-
+    const YOUTUBE_API_KEY = 'AIzaSyDF3IzzrvxyCWmnrRiajzttXSOk4FqCbxE';
+    let currentPlaylist = [];
     let currentIndex = 0;
     let ytPlayer;
     let isPlaying = false;
-    let isShuffle = false;
-    let isRepeat = false;
-    let isMuted = false;
     let ytReady = false;
 
-    function renderSongs(songsToDisplay) {
-      const container = document.getElementById('songs-container');
-      container.innerHTML = '';
+    // Load Initial Hits on Page Load
+    window.onload = function() {
+      fetchSongs('Haryanvi Punjabi Hindi Rajasthani songs');
+    };
 
-      const grouped = {};
-      songsToDisplay.forEach(song => {
-        if (!grouped[song.genre]) grouped[song.genre] = [];
-        grouped[song.genre].push(song);
+    async function fetchSongs(query) {
+      document.getElementById('results-title').innerText = `Results for: "${query}"`;
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=16&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
+      
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.items) {
+          currentPlaylist = data.items.map(item => ({
+            id: item.id.videoId,
+            title: item.snippet.title,
+            artist: item.snippet.channelTitle,
+            img: item.snippet.thumbnails.high.url
+          }));
+          renderSongs(currentPlaylist);
+        }
+      } catch (err) {
+        console.error("YouTube API Error:", err);
+      }
+    }
+
+    function searchYouTube() {
+      const q = document.getElementById('search-input').value;
+      if (q.trim() !== '') {
+        fetchSongs(q);
+      }
+    }
+
+    function renderSongs(songs) {
+      const grid = document.getElementById('songs-grid');
+      grid.innerHTML = '';
+      songs.forEach((song, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <img src="${song.img}" alt="Thumb">
+          <h3>${song.title}</h3>
+          <p>${song.artist}</p>
+          <button class="play-btn" onclick="playSong(${idx})">▶ Play Song</button>
+        `;
+        grid.appendChild(card);
       });
-
-      if (Object.keys(grouped).length === 0) {
-        container.innerHTML = '<p style="text-align:center; margin-top:30px; color:#888;">No songs found matching your search.</p>';
-        return;
-      }
-
-      for (let genre in grouped) {
-        const section = document.createElement('div');
-        section.innerHTML = `<div class="genre-title">${genre}</div>`;
-        const grid = document.createElement('div');
-        grid.className = 'grid';
-
-        grouped[genre].forEach(song => {
-          const indexInOriginal = playlist.findIndex(p => p.id === song.id);
-          const card = document.createElement('div');
-          card.className = 'card';
-          card.innerHTML = `
-            <div>
-              <h3>${song.title}</h3>
-              <p>${song.artist}</p>
-            </div>
-            <button class="play-btn" onclick="selectAndPlay(${indexInOriginal})">▶ Play</button>
-          `;
-          grid.appendChild(card);
-        });
-
-        section.appendChild(grid);
-        container.appendChild(section);
-      }
     }
-
-    function filterSongs() {
-      const query = document.getElementById('search-input').value.toLowerCase();
-      const filtered = playlist.filter(song => 
-        song.title.toLowerCase().includes(query) || 
-        song.artist.toLowerCase().includes(query) ||
-        song.genre.toLowerCase().includes(query)
-      );
-      renderSongs(filtered);
-    }
-
-    renderSongs(playlist);
 
     function onYouTubeIframeAPIReady() {
       ytPlayer = new YT.Player('player', {
         height: '100%',
         width: '100%',
-        videoId: playlist[0].id,
-        playerVars: {
-          'autoplay': 0,
-          'controls': 0,
-          'origin': window.location.origin
-        },
+        videoId: '',
+        playerVars: { 'autoplay': 1, 'controls': 0 },
         events: {
           'onReady': () => { ytReady = true; },
-          'onStateChange': onPlayerStateChange,
-          'onError': onPlayerError
+          'onStateChange': onPlayerStateChange
         }
       });
     }
 
-    function selectAndPlay(index) {
-      currentIndex = index;
-      loadSong(true);
-    }
-
-    function loadSong(autoPlay = true) {
-      const song = playlist[currentIndex];
+    function playSong(idx) {
+      currentIndex = idx;
+      const song = currentPlaylist[idx];
       document.getElementById('song-title').innerText = song.title;
       document.getElementById('artist-name').innerText = song.artist;
       document.getElementById('mini-img').src = song.img;
 
-      document.getElementById('full-title').innerText = song.title;
-      document.getElementById('full-artist').innerText = song.artist;
-      document.getElementById('full-img').src = song.img;
-
-      if (ytPlayer && ytReady && ytPlayer.loadVideoById) {
-        if (autoPlay) {
-          ytPlayer.loadVideoById(song.id);
-          isPlaying = true;
-        } else {
-          ytPlayer.cueVideoById(song.id);
-          isPlaying = false;
-        }
+      if (ytPlayer && ytReady) {
+        ytPlayer.loadVideoById(song.id);
+        isPlaying = true;
         updatePlayBtnUI();
       }
     }
 
     function togglePlayPause() {
       if (!ytPlayer || !ytReady) return;
-      if (isPlaying) { 
-        ytPlayer.pauseVideo(); 
-        isPlaying = false; 
-      } else { 
-        ytPlayer.playVideo(); 
-        isPlaying = true; 
+      if (isPlaying) {
+        ytPlayer.pauseVideo();
+        isPlaying = false;
+      } else {
+        ytPlayer.playVideo();
+        isPlaying = true;
       }
       updatePlayBtnUI();
     }
 
     function updatePlayBtnUI() {
-      const text = isPlaying ? "⏸" : "▶";
-      document.getElementById('main-play-btn').innerText = text;
-      document.getElementById('full-play-btn').innerText = text;
+      document.getElementById('main-play-btn').innerText = isPlaying ? "⏸" : "▶";
     }
 
-    function skipTime(seconds) {
-      if (ytPlayer && ytReady && ytPlayer.getCurrentTime) {
-        const curr = ytPlayer.getCurrentTime();
-        ytPlayer.seekTo(curr + seconds, true);
+    function skipTime(sec) {
+      if (ytPlayer && ytReady) {
+        ytPlayer.seekTo(ytPlayer.getCurrentTime() + sec, true);
       }
-    }
-
-    function setVolume(val) { 
-      if (ytPlayer && ytReady && ytPlayer.setVolume) ytPlayer.setVolume(val); 
-    }
-
-    function toggleMute() {
-      if (!ytPlayer || !ytReady) return;
-      isMuted = !isMuted;
-      if (isMuted) { ytPlayer.mute(); } else { ytPlayer.unMute(); }
-      document.getElementById('mute-btn').innerText = isMuted ? "🔇" : "🔊";
     }
 
     function seekToTime(percent) {
       if (ytPlayer && ytReady && ytPlayer.getDuration) {
-        const duration = ytPlayer.getDuration();
-        ytPlayer.seekTo((percent / 100) * duration, true);
+        ytPlayer.seekTo((percent / 100) * ytPlayer.getDuration(), true);
       }
     }
 
     setInterval(() => {
-      if (ytPlayer && ytReady && ytPlayer.getCurrentTime && isPlaying) {
+      if (ytPlayer && ytReady && isPlaying && ytPlayer.getCurrentTime) {
         const curr = ytPlayer.getCurrentTime();
         const dur = ytPlayer.getDuration();
         if (dur > 0) {
-          const val = (curr / dur) * 100;
-          document.getElementById('seek-bar').value = val;
-          document.getElementById('full-seek-bar').value = val;
+          document.getElementById('seek-bar').value = (curr / dur) * 100;
           document.getElementById('curr-time').innerText = formatTime(curr);
           document.getElementById('dur-time').innerText = formatTime(dur);
         }
       }
     }, 1000);
 
-    function formatTime(time) {
-      const min = Math.floor(time / 60);
-      const sec = Math.floor(time % 60);
-      return min + ":" + (sec < 10 ? "0" : "") + sec;
+    function formatTime(t) {
+      const m = Math.floor(t / 60);
+      const s = Math.floor(t % 60);
+      return m + ":" + (s < 10 ? "0" : "") + s;
     }
 
-    function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.PLAYING) { 
-        isPlaying = true; 
-        updatePlayBtnUI(); 
-      } else if (event.data === YT.PlayerState.PAUSED) { 
-        isPlaying = false; 
-        updatePlayBtnUI(); 
-      } else if (event.data === YT.PlayerState.ENDED) { 
-        playNext(); 
-      }
+    function onPlayerStateChange(e) {
+      if (e.data === YT.PlayerState.PLAYING) { isPlaying = true; updatePlayBtnUI(); }
+      else if (e.data === YT.PlayerState.PAUSED) { isPlaying = false; updatePlayBtnUI(); }
     }
-
-    function onPlayerError(event) {
-      setTimeout(() => { playNext(); }, 1500);
-    }
-
-    function playNext() {
-      if (isRepeat) { loadSong(true); return; }
-      if (isShuffle) { 
-        currentIndex = Math.floor(Math.random() * playlist.length); 
-      } else { 
-        currentIndex = (currentIndex + 1) % playlist.length; 
-      }
-      loadSong(true);
-    }
-
-    function playPrevious() {
-      currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
-      loadSong(true);
-    }
-
-    function toggleShuffle() {
-      isShuffle = !isShuffle;
-      document.getElementById('shuffle-btn').classList.toggle('active', isShuffle);
-    }
-
-    function toggleRepeat() {
-      isRepeat = !isRepeat;
-      document.getElementById('repeat-btn').classList.toggle('active', isRepeat);
-    }
-
-    function openFullPlayer() { document.getElementById('full-player').classList.add('open'); }
-    function closeFullPlayer() { document.getElementById('full-player').classList.remove('open'); }
-
-    document.addEventListener('keydown', (e) => {
-      if (document.activeElement.tagName === 'INPUT') return;
-      if (e.code === 'Space') { e.preventDefault(); togglePlayPause(); }
-      else if (e.code === 'ArrowRight') { skipTime(10); }
-      else if (e.code === 'ArrowLeft') { skipTime(-10); }
-    });
   </script>
   <script src="https://www.youtube.com/iframe_api"></script>
 </body>
