@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Suniiyo Music - Live YouTube Engine</title>
+  <title>Suniiyo Music - Native Audio Engine</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { background-color: #121212; color: #ffffff; padding-bottom: 120px; display: flex; flex-direction: column; min-height: 100vh; }
+    body { background-color: #121212; color: #ffffff; padding-bottom: 110px; display: flex; flex-direction: column; min-height: 100vh; }
     
-    /* Layout Setup */
-    .app-layout { display: flex; flex: 1; min-height: calc(100vh - 120px); }
+    .app-layout { display: flex; flex: 1; min-height: calc(100vh - 110px); }
 
-    /* Sidebar Navigation */
     sidebar {
       width: 240px;
       background-color: #000000;
@@ -46,7 +44,6 @@
 
     .nav-divider { height: 1px; background: #282828; margin: 10px 0; }
 
-    /* Main Area */
     .main-content { flex: 1; padding: 20px; background: #121212; overflow-y: auto; }
 
     .search-container { display: flex; gap: 10px; max-width: 600px; margin-bottom: 25px; }
@@ -60,19 +57,9 @@
       font-size: 15px;
       outline: none;
     }
-    .search-btn {
-      background: #1db954;
-      color: #000;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 25px;
-      font-weight: bold;
-      cursor: pointer;
-    }
 
     .section-title { font-size: 22px; margin-bottom: 20px; color: #1db954; border-left: 4px solid #1db954; padding-left: 10px; }
     
-    /* Grid Layouts */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
 
     .card { background: #181818; padding: 12px; border-radius: 10px; border: 1px solid #282828; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; }
@@ -82,13 +69,11 @@
     .card p { color: #b3b3b3; font-size: 12px; margin-bottom: 10px; }
     .play-btn { background-color: #1db954; color: #000; border: none; padding: 8px; border-radius: 20px; cursor: pointer; font-weight: bold; width: 100%; }
 
-    /* Singer Circle Card */
     .singer-card { background: #181818; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid #282828; }
     .singer-card:hover { background: #282828; border-color: #1db954; }
     .singer-card img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; border: 2px solid #1db954; }
     .singer-card h3 { font-size: 15px; color: #fff; }
 
-    /* Bottom Player Bar */
     .player-bar { 
       position: fixed; 
       bottom: 0; 
@@ -118,9 +103,6 @@
     .seek-container { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 11px; color: #aaa; }
     .seek-bar { flex-grow: 1; accent-color: #1db954; cursor: pointer; }
 
-    .player-screen { width: 1px; height: 1px; opacity: 0.01; position: absolute; pointer-events: none; }
-
-    /* Mobile Responsive */
     @media (max-width: 768px) {
       .app-layout { flex-direction: column; }
       sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; }
@@ -136,7 +118,7 @@
     <sidebar>
       <div class="logo-container">
         <h1>Suniiyo Music</h1>
-        <p>Live YouTube Player Engine</p>
+        <p>Pure Music Engine</p>
       </div>
 
       <button class="nav-btn back-btn" onclick="goBack()">⬅ Back</button>
@@ -154,8 +136,7 @@
 
     <div class="main-content">
       <div class="search-container">
-        <input type="text" id="search-input" class="search-box" placeholder="🔍 Search any song, album or singer..." onkeydown="if(event.key==='Enter') searchYouTube()">
-        <button class="search-btn" onclick="searchYouTube()">Search</button>
+        <input type="text" id="search-input" class="search-box" placeholder="🔍 Search songs or singers..." onkeyup="filterSongs()">
       </div>
 
       <div class="section-title" id="results-title">🔥 Trending Hits</div>
@@ -186,28 +167,46 @@
       </div>
     </div>
 
-    <div class="player-screen">
-      <div id="player"></div>
-    </div>
+    <!-- Hidden Native Audio Player -->
+    <audio id="audio-engine" ontimeupdate="updateProgress()" onended="playNext()"></audio>
   </div>
 
   <script>
-    const YOUTUBE_API_KEY = 'AIzaSyCefppJohInl4qBNknhjztiAKQZnmaYRyQ';
-    let currentPlaylist = [];
-    let ytPlayer;
-    let isPlaying = false;
-    let ytReady = false;
-    let historyStack = [];
+    // Stable Audio Streams Array
+    const masterSongs = [
+      // 🔥 Haryanvi
+      { id: 'h1', title: 'Gypsy', artist: 'GD Kaur / Pranjal Dahiya', genre: 'haryanvi', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+      { id: 'h2', title: '52 Gaj Ka Daman', artist: 'Renuka Panwar', genre: 'haryanvi', img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+      { id: 'h3', title: 'Moto', artist: 'Diler Kharkiya', genre: 'haryanvi', img: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+      { id: 'h4', title: 'Circle', artist: 'Dhandha Nyoliwala', genre: 'haryanvi', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+      { id: 'h5', title: 'Maruti', artist: 'Dhandha Nyoliwala', genre: 'haryanvi', img: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
+
+      // ⚡ Punjabi
+      { id: 'p1', title: 'Softly', artist: 'Karan Aujla', genre: 'punjabi', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' },
+      { id: 'p2', title: 'Elevated', artist: 'Shubh', genre: 'punjabi', img: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3' },
+      { id: 'p3', title: 'Lover', artist: 'Diljit Dosanjh', genre: 'punjabi', img: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
+      { id: 'p4', title: '295', artist: 'Sidhu Moosewala', genre: 'punjabi', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3' },
+
+      // ❤️ Hindi / Bollywood
+      { id: 'b1', title: 'Kesariya', artist: 'Arijit Singh', genre: 'hindi', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3' },
+      { id: 'b2', title: 'Tum Hi Ho', artist: 'Arijit Singh', genre: 'hindi', img: 'https://images.unsplash.com/photo-1445985543470-41fba5c3144a?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3' },
+
+      // 🪕 Rajasthani
+      { id: 'r1', title: 'Choudhary', artist: 'Mame Khan', genre: 'rajasthani', img: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3' }
+    ];
 
     const popularSingers = [
-      { name: "Sidhu Moosewala", query: "Sidhu Moose Wala All Songs", img: "https://i.ytimg.com/vi/hT_nvWreIhg/hqdefault.jpg" },
-      { name: "Diler Kharkiya", query: "Diler Kharkiya Songs", img: "https://i.ytimg.com/vi/W1sX3xJ0eN4/hqdefault.jpg" },
-      { name: "Gulzaar Chhaniwala", query: "Gulzaar Chhaniwala Songs", img: "https://i.ytimg.com/vi/Z10hX7Wn7x8/hqdefault.jpg" },
-      { name: "Khesari Lal Yadav", query: "Khesari Lal Songs", img: "https://i.ytimg.com/vi/d_e2L2K_yD8/hqdefault.jpg" },
-      { name: "Badshah", query: "Badshah All Hit Songs", img: "https://i.ytimg.com/vi/NbyHNASFi6U/hqdefault.jpg" },
-      { name: "Arijit Singh", query: "Arijit Singh Best Songs", img: "https://i.ytimg.com/vi/vS84E0Kz8l0/hqdefault.jpg" },
-      { name: "Karan Aujla", query: "Karan Aujla New Songs", img: "https://i.ytimg.com/vi/3B_4M1K4LzA/hqdefault.jpg" }
+      { name: "Sidhu Moosewala", genre: "punjabi", img: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300" },
+      { name: "Diler Kharkiya", genre: "haryanvi", img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300" },
+      { name: "Dhandha Nyoliwala", genre: "haryanvi", img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" },
+      { name: "Arijit Singh", genre: "hindi", img: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300" },
+      { name: "Karan Aujla", genre: "punjabi", img: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300" }
     ];
+
+    let currentSongs = [];
+    let currentSongIndex = -1;
+    const audio = document.getElementById('audio-engine');
+    let historyStack = [];
 
     window.onload = function() {
       loadTab('home');
@@ -220,60 +219,57 @@
     }
 
     function loadTab(tab, addToHistory = true) {
-      if (addToHistory && (historyStack.length === 0 || historyStack[historyStack.length - 1].tab !== tab)) {
-        historyStack.push({ type: 'tab', tab: tab });
+      if (addToHistory && (historyStack.length === 0 || historyStack[historyStack.length - 1] !== tab)) {
+        historyStack.push(tab);
       }
 
       setActiveBtn(tab);
+      document.getElementById('search-input').value = '';
 
-      if (tab === 'home') fetchSongs('Trending Hit Songs 2026', '🔥 Home - Trending Hits');
-      else if (tab === 'trending') fetchSongs('Top Trending Songs India', '🔥 Trending Songs');
-      else if (tab === 'haryanvi') fetchSongs('Latest Haryanvi Songs 2026', '🎧 Haryanvi Hits');
-      else if (tab === 'punjabi') fetchSongs('Top Punjabi Songs 2026', '🔥 Punjabi Hits');
-      else if (tab === 'hindi') fetchSongs('Latest Bollywood Hindi Songs', '🎵 Hindi Hits');
-      else if (tab === 'rajasthani') fetchSongs('Latest Rajasthani Marwadi Songs', '🪕 Rajasthani Hits');
-      else if (tab === 'singers') renderSingersView();
+      if (tab === 'home') {
+        renderSongsList(masterSongs, '🏠 Home - Trending Tracks');
+      } else if (tab === 'trending') {
+        renderSongsList(masterSongs.slice().reverse(), '🔥 Trending Hits');
+      } else if (tab === 'singers') {
+        renderSingersView();
+      } else {
+        const filtered = masterSongs.filter(s => s.genre === tab);
+        renderSongsList(filtered, `🎵 ${tab.toUpperCase()} Songs`);
+      }
     }
 
     function goBack() {
       if (historyStack.length > 1) {
-        historyStack.pop(); // Remove current view
-        const prev = historyStack[historyStack.length - 1];
-        if (prev.type === 'tab') loadTab(prev.tab, false);
-        else if (prev.type === 'query') fetchSongs(prev.query, prev.title, false);
+        historyStack.pop();
+        const prevTab = historyStack[historyStack.length - 1];
+        loadTab(prevTab, false);
       } else {
         loadTab('home', false);
       }
     }
 
-    async function fetchSongs(query, title, addToHistory = true) {
-      document.getElementById('results-title').innerText = title || `Results for: "${query}"`;
-      
-      if (addToHistory && historyStack.length > 0 && historyStack[historyStack.length - 1].query !== query) {
-        historyStack.push({ type: 'query', query: query, title: title });
+    function renderSongsList(songs, title) {
+      currentSongs = songs;
+      document.getElementById('results-title').innerText = title;
+      const grid = document.getElementById('songs-grid');
+      grid.innerHTML = '';
+
+      if (songs.length === 0) {
+        grid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No songs found.</p>';
+        return;
       }
 
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=24&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
-      
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.items && data.items.length > 0) {
-          currentPlaylist = data.items
-            .filter(item => item.id && item.id.videoId)
-            .map(item => ({
-              id: item.id.videoId,
-              title: item.snippet.title,
-              artist: item.snippet.channelTitle,
-              img: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
-            }));
-          renderSongs(currentPlaylist);
-        } else {
-          document.getElementById('songs-grid').innerHTML = '<p style="grid-column:1/-1; text-align:center;">No songs found.</p>';
-        }
-      } catch (err) {
-        console.error("YouTube API Error:", err);
-      }
+      songs.forEach((song, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <img src="${song.img}" alt="Thumb">
+          <h3>${song.title}</h3>
+          <p>${song.artist}</p>
+          <button class="play-btn" onclick="playSelectedSong(${idx})">▶ Play Song</button>
+        `;
+        grid.appendChild(card);
+      });
     }
 
     function renderSingersView() {
@@ -284,7 +280,10 @@
       popularSingers.forEach(singer => {
         const card = document.createElement('div');
         card.className = 'singer-card';
-        card.onclick = () => fetchSongs(singer.query, `🌟 ${singer.name} Top Hits`);
+        card.onclick = () => {
+          const singerSongs = masterSongs.filter(s => s.artist.toLowerCase().includes(singer.name.toLowerCase()));
+          renderSongsList(singerSongs.length > 0 ? singerSongs : masterSongs.filter(s => s.genre === singer.genre), `🌟 ${singer.name} Songs`);
+        };
         card.innerHTML = `
           <img src="${singer.img}" alt="${singer.name}">
           <h3>${singer.name}</h3>
@@ -293,109 +292,69 @@
       });
     }
 
-    function searchYouTube() {
-      const q = document.getElementById('search-input').value;
-      if (q.trim() !== '') {
-        fetchSongs(q, `🔍 Search: "${q}"`);
-      }
+    function filterSongs() {
+      const q = document.getElementById('search-input').value.toLowerCase();
+      const filtered = masterSongs.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
+      renderSongsList(filtered, `🔍 Search: "${q}"`);
     }
 
-    function renderSongs(songs) {
-      const grid = document.getElementById('songs-grid');
-      grid.innerHTML = '';
-      songs.forEach((song) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <img src="${song.img}" alt="Thumb">
-          <h3>${song.title}</h3>
-          <p>${song.artist}</p>
-          <button class="play-btn" onclick="playSong('${song.id}')">▶ Play Song</button>
-        `;
-        grid.appendChild(card);
-      });
-    }
-
-    function onYouTubeIframeAPIReady() {
-      ytPlayer = new YT.Player('player', {
-        height: '100%',
-        width: '100%',
-        playerVars: { 'autoplay': 1, 'controls': 0, 'playsinline': 1 },
-        events: {
-          'onReady': () => { ytReady = true; },
-          'onStateChange': onPlayerStateChange
-        }
-      });
-    }
-
-    function playSong(videoId) {
-      const song = currentPlaylist.find(s => s.id === videoId);
-      if (!song) return;
+    function playSelectedSong(index) {
+      currentSongIndex = index;
+      const song = currentSongs[index];
 
       document.getElementById('song-title').innerText = song.title;
       document.getElementById('artist-name').innerText = song.artist;
       document.getElementById('mini-img').src = song.img;
 
-      if (ytPlayer && ytReady) {
-        ytPlayer.loadVideoById(videoId);
-        isPlaying = true;
-        updatePlayBtnUI();
-      } else {
-        setTimeout(() => playSong(videoId), 500);
-      }
+      audio.src = song.src;
+      audio.play();
+      document.getElementById('main-play-btn').innerText = "⏸";
     }
 
     function togglePlayPause() {
-      if (!ytPlayer || !ytReady) return;
-      if (isPlaying) {
-        ytPlayer.pauseVideo();
-        isPlaying = false;
+      if (!audio.src) return;
+      if (audio.paused) {
+        audio.play();
+        document.getElementById('main-play-btn').innerText = "⏸";
       } else {
-        ytPlayer.playVideo();
-        isPlaying = true;
+        audio.pause();
+        document.getElementById('main-play-btn').innerText = "▶";
       }
-      updatePlayBtnUI();
-    }
-
-    function updatePlayBtnUI() {
-      document.getElementById('main-play-btn').innerText = isPlaying ? "⏸" : "▶";
     }
 
     function skipTime(sec) {
-      if (ytPlayer && ytReady && ytPlayer.getCurrentTime) {
-        ytPlayer.seekTo(ytPlayer.getCurrentTime() + sec, true);
+      if (audio.duration) {
+        audio.currentTime += sec;
       }
     }
 
-    function seekToTime(percent) {
-      if (ytPlayer && ytReady && ytPlayer.getDuration) {
-        ytPlayer.seekTo((percent / 100) * ytPlayer.getDuration(), true);
+    function updateProgress() {
+      if (audio.duration) {
+        const pct = (audio.currentTime / audio.duration) * 100;
+        document.getElementById('seek-bar').value = pct;
+        document.getElementById('curr-time').innerText = formatTime(audio.currentTime);
+        document.getElementById('dur-time').innerText = formatTime(audio.duration);
       }
     }
 
-    setInterval(() => {
-      if (ytPlayer && ytReady && isPlaying && ytPlayer.getCurrentTime) {
-        const curr = ytPlayer.getCurrentTime();
-        const dur = ytPlayer.getDuration();
-        if (dur > 0) {
-          document.getElementById('seek-bar').value = (curr / dur) * 100;
-          document.getElementById('curr-time').innerText = formatTime(curr);
-          document.getElementById('dur-time').innerText = formatTime(dur);
-        }
+    function seekToTime(pct) {
+      if (audio.duration) {
+        audio.currentTime = (pct / 100) * audio.duration;
       }
-    }, 1000);
+    }
+
+    function playNext() {
+      if (currentSongs.length > 0) {
+        currentSongIndex = (currentSongIndex + 1) % currentSongs.length;
+        playSelectedSong(currentSongIndex);
+      }
+    }
 
     function formatTime(t) {
       const m = Math.floor(t / 60);
       const s = Math.floor(t % 60);
       return m + ":" + (s < 10 ? "0" : "") + s;
     }
-
-    function onPlayerStateChange(e) {
-      if (e.data === YT.PlayerState.PLAYING) { isPlaying = true; updatePlayBtnUI(); }
-      else if (e.data === YT.PlayerState.PAUSED) { isPlaying = false; updatePlayBtnUI(); }
-    }
   </script>
-  <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
