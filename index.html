@@ -6,15 +6,52 @@
   <title>Suniiyo Music - Live YouTube Engine</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { background-color: #121212; color: #ffffff; padding-bottom: 220px; }
+    body { background-color: #121212; color: #ffffff; padding-bottom: 120px; display: flex; flex-direction: column; min-height: 100vh; }
     
-    header { background-color: #000000; padding: 20px; text-align: center; border-bottom: 1px solid #282828; }
-    header h1 { color: #1db954; font-size: 28px; }
-    header p { color: #b3b3b3; font-size: 14px; margin-top: 5px; margin-bottom: 15px; }
+    /* Layout Setup */
+    .app-layout { display: flex; flex: 1; min-height: calc(100vh - 120px); }
 
-    .search-container { display: flex; justify-content: center; gap: 10px; max-width: 600px; margin: 0 auto; }
+    /* Sidebar Navigation */
+    sidebar {
+      width: 240px;
+      background-color: #000000;
+      padding: 20px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-right: 1px solid #282828;
+    }
+    
+    .logo-container { margin-bottom: 20px; text-align: center; }
+    .logo-container h1 { color: #1db954; font-size: 24px; }
+    .logo-container p { color: #b3b3b3; font-size: 11px; }
+
+    .nav-btn {
+      background: #181818;
+      color: #b3b3b3;
+      border: 1px solid #282828;
+      padding: 12px 15px;
+      border-radius: 8px;
+      text-align: left;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: 0.2s;
+    }
+    .nav-btn:hover, .nav-btn.active { background: #1db954; color: #000; }
+    .nav-btn.back-btn { background: #333333; color: #ffffff; border-color: #444; margin-bottom: 10px; }
+    .nav-btn.back-btn:hover { background: #444444; }
+
+    .nav-divider { height: 1px; background: #282828; margin: 10px 0; }
+
+    /* Main Area */
+    .main-content { flex: 1; padding: 20px; background: #121212; overflow-y: auto; }
+
+    .search-container { display: flex; gap: 10px; max-width: 600px; margin-bottom: 25px; }
     .search-box {
-      width: 100%;
+      flex: 1;
       padding: 12px 20px;
       border-radius: 25px;
       border: 2px solid #1db954;
@@ -32,19 +69,26 @@
       font-weight: bold;
       cursor: pointer;
     }
-    .search-btn:hover { background: #1ed760; }
 
-    .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
-    .section-title { font-size: 20px; margin: 20px 0; color: #1db954; border-left: 4px solid #1db954; padding-left: 10px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    .section-title { font-size: 22px; margin-bottom: 20px; color: #1db954; border-left: 4px solid #1db954; padding-left: 10px; }
+    
+    /* Grid Layouts */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
 
-    .card { background: #181818; padding: 12px; border-radius: 8px; border: 1px solid #282828; display: flex; flex-direction: column; justify-content: space-between; }
-    .card:hover { background: #282828; }
-    .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 10px; }
+    .card { background: #181818; padding: 12px; border-radius: 10px; border: 1px solid #282828; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; }
+    .card:hover { background: #282828; transform: translateY(-3px); }
+    .card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
     .card h3 { font-size: 14px; margin-bottom: 5px; height: 36px; overflow: hidden; line-height: 1.2; }
     .card p { color: #b3b3b3; font-size: 12px; margin-bottom: 10px; }
-    .play-btn { background-color: #1db954; color: white; border: none; padding: 8px; border-radius: 20px; cursor: pointer; font-weight: bold; width: 100%; }
+    .play-btn { background-color: #1db954; color: #000; border: none; padding: 8px; border-radius: 20px; cursor: pointer; font-weight: bold; width: 100%; }
 
+    /* Singer Circle Card */
+    .singer-card { background: #181818; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; border: 1px solid #282828; }
+    .singer-card:hover { background: #282828; border-color: #1db954; }
+    .singer-card img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; border: 2px solid #1db954; }
+    .singer-card h3 { font-size: 15px; color: #fff; }
+
+    /* Bottom Player Bar */
     .player-bar { 
       position: fixed; 
       bottom: 0; 
@@ -58,39 +102,65 @@
       align-items: center; 
       z-index: 1000; 
       gap: 15px;
+      height: 90px;
     }
 
-    .mini-info { display: flex; align-items: center; gap: 12px; min-width: 180px; }
-    .mini-thumb { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }
-    .song-info h4 { color: #1db954; font-size: 13px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .song-info p { color: #aaaaaa; font-size: 11px; }
+    .mini-info { display: flex; align-items: center; gap: 12px; min-width: 200px; }
+    .mini-thumb { width: 55px; height: 55px; border-radius: 6px; object-fit: cover; }
+    .song-info h4 { color: #1db954; font-size: 14px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .song-info p { color: #aaaaaa; font-size: 12px; }
 
     .player-middle { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-grow: 1; max-width: 500px; }
-    .player-controls { display: flex; align-items: center; gap: 8px; }
-    .control-btn { background: #282828; color: #fff; border: 1px solid #333; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: bold; }
-    .control-btn.play-toggle { background: #1db954; color: #000; font-size: 14px; padding: 6px 16px; }
+    .player-controls { display: flex; align-items: center; gap: 10px; }
+    .control-btn { background: #282828; color: #fff; border: 1px solid #333; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; }
+    .control-btn.play-toggle { background: #1db954; color: #000; font-size: 16px; padding: 6px 18px; }
 
-    .seek-container { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 11px; color: #aaa; }
+    .seek-container { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 11px; color: #aaa; }
     .seek-bar { flex-grow: 1; accent-color: #1db954; cursor: pointer; }
 
-    /* YouTube Hidden Player */
     .player-screen { width: 1px; height: 1px; opacity: 0.01; position: absolute; pointer-events: none; }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .app-layout { flex-direction: column; }
+      sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; }
+      .logo-container { display: none; }
+      .nav-btn { white-space: nowrap; font-size: 12px; padding: 8px 12px; }
+      .nav-divider { display: none; }
+    }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Suniiyo Music</h1>
-    <p>Search & Stream Any Song Live</p>
-    <div class="search-container">
-      <input type="text" id="search-input" class="search-box" placeholder="🔍 Search any song or singer..." onkeydown="if(event.key==='Enter') searchYouTube()">
-      <button class="search-btn" onclick="searchYouTube()">Search</button>
-    </div>
-  </header>
+  <div class="app-layout">
+    <sidebar>
+      <div class="logo-container">
+        <h1>Suniiyo Music</h1>
+        <p>Live YouTube Player Engine</p>
+      </div>
 
-  <div class="container">
-    <div class="section-title" id="results-title">🔥 Latest Songs</div>
-    <div class="grid" id="songs-grid"></div>
+      <button class="nav-btn back-btn" onclick="goBack()">⬅ Back</button>
+      <button class="nav-btn active" id="btn-home" onclick="loadTab('home')">🏠 Home</button>
+      <button class="nav-btn" id="btn-trending" onclick="loadTab('trending')">🔥 Trending Songs</button>
+      <button class="nav-btn" id="btn-singers" onclick="loadTab('singers')">🌟 Popular Singers</button>
+
+      <div class="nav-divider"></div>
+
+      <button class="nav-btn" id="btn-haryanvi" onclick="loadTab('haryanvi')">🎧 Haryanvi Songs</button>
+      <button class="nav-btn" id="btn-punjabi" onclick="loadTab('punjabi')">🔥 Punjabi Songs</button>
+      <button class="nav-btn" id="btn-hindi" onclick="loadTab('hindi')">🎵 Hindi Songs</button>
+      <button class="nav-btn" id="btn-rajasthani" onclick="loadTab('rajasthani')">🪕 Rajasthani Songs</button>
+    </sidebar>
+
+    <div class="main-content">
+      <div class="search-container">
+        <input type="text" id="search-input" class="search-box" placeholder="🔍 Search any song, album or singer..." onkeydown="if(event.key==='Enter') searchYouTube()">
+        <button class="search-btn" onclick="searchYouTube()">Search</button>
+      </div>
+
+      <div class="section-title" id="results-title">🔥 Trending Hits</div>
+      <div class="grid" id="songs-grid"></div>
+    </div>
   </div>
 
   <div class="player-bar">
@@ -122,26 +192,75 @@
   </div>
 
   <script>
-    const YOUTUBE_API_KEY = 'AIzaSyDF3IzzrvxyCWmnrRiajzttXSOk4FqCbxE';
+    const YOUTUBE_API_KEY = 'AIzaSyCefppJohInl4qBNknhjztiAKQZnmaYRyQ';
     let currentPlaylist = [];
     let ytPlayer;
     let isPlaying = false;
     let ytReady = false;
+    let historyStack = [];
+
+    const popularSingers = [
+      { name: "Sidhu Moosewala", query: "Sidhu Moose Wala All Songs", img: "https://i.ytimg.com/vi/hT_nvWreIhg/hqdefault.jpg" },
+      { name: "Diler Kharkiya", query: "Diler Kharkiya Songs", img: "https://i.ytimg.com/vi/W1sX3xJ0eN4/hqdefault.jpg" },
+      { name: "Gulzaar Chhaniwala", query: "Gulzaar Chhaniwala Songs", img: "https://i.ytimg.com/vi/Z10hX7Wn7x8/hqdefault.jpg" },
+      { name: "Khesari Lal Yadav", query: "Khesari Lal Songs", img: "https://i.ytimg.com/vi/d_e2L2K_yD8/hqdefault.jpg" },
+      { name: "Badshah", query: "Badshah All Hit Songs", img: "https://i.ytimg.com/vi/NbyHNASFi6U/hqdefault.jpg" },
+      { name: "Arijit Singh", query: "Arijit Singh Best Songs", img: "https://i.ytimg.com/vi/vS84E0Kz8l0/hqdefault.jpg" },
+      { name: "Karan Aujla", query: "Karan Aujla New Songs", img: "https://i.ytimg.com/vi/3B_4M1K4LzA/hqdefault.jpg" }
+    ];
 
     window.onload = function() {
-      fetchSongs('Latest Haryanvi Songs');
+      loadTab('home');
     };
 
-    async function fetchSongs(query) {
-      document.getElementById('results-title').innerText = `Results for: "${query}"`;
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
+    function setActiveBtn(tabId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    function loadTab(tab, addToHistory = true) {
+      if (addToHistory && (historyStack.length === 0 || historyStack[historyStack.length - 1].tab !== tab)) {
+        historyStack.push({ type: 'tab', tab: tab });
+      }
+
+      setActiveBtn(tab);
+
+      if (tab === 'home') fetchSongs('Trending Hit Songs 2026', '🔥 Home - Trending Hits');
+      else if (tab === 'trending') fetchSongs('Top Trending Songs India', '🔥 Trending Songs');
+      else if (tab === 'haryanvi') fetchSongs('Latest Haryanvi Songs 2026', '🎧 Haryanvi Hits');
+      else if (tab === 'punjabi') fetchSongs('Top Punjabi Songs 2026', '🔥 Punjabi Hits');
+      else if (tab === 'hindi') fetchSongs('Latest Bollywood Hindi Songs', '🎵 Hindi Hits');
+      else if (tab === 'rajasthani') fetchSongs('Latest Rajasthani Marwadi Songs', '🪕 Rajasthani Hits');
+      else if (tab === 'singers') renderSingersView();
+    }
+
+    function goBack() {
+      if (historyStack.length > 1) {
+        historyStack.pop(); // Remove current view
+        const prev = historyStack[historyStack.length - 1];
+        if (prev.type === 'tab') loadTab(prev.tab, false);
+        else if (prev.type === 'query') fetchSongs(prev.query, prev.title, false);
+      } else {
+        loadTab('home', false);
+      }
+    }
+
+    async function fetchSongs(query, title, addToHistory = true) {
+      document.getElementById('results-title').innerText = title || `Results for: "${query}"`;
+      
+      if (addToHistory && historyStack.length > 0 && historyStack[historyStack.length - 1].query !== query) {
+        historyStack.push({ type: 'query', query: query, title: title });
+      }
+
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=24&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
       
       try {
         const res = await fetch(url);
         const data = await res.json();
         if (data.items && data.items.length > 0) {
           currentPlaylist = data.items
-            .filter(item => item.id && item.id.videoId) // Valid videos only
+            .filter(item => item.id && item.id.videoId)
             .map(item => ({
               id: item.id.videoId,
               title: item.snippet.title,
@@ -150,17 +269,34 @@
             }));
           renderSongs(currentPlaylist);
         } else {
-          document.getElementById('songs-grid').innerHTML = '<p style="grid-column:1/-1; text-align:center;">No songs found. Try another search!</p>';
+          document.getElementById('songs-grid').innerHTML = '<p style="grid-column:1/-1; text-align:center;">No songs found.</p>';
         }
       } catch (err) {
         console.error("YouTube API Error:", err);
       }
     }
 
+    function renderSingersView() {
+      document.getElementById('results-title').innerText = '🌟 Popular Singers';
+      const grid = document.getElementById('songs-grid');
+      grid.innerHTML = '';
+      
+      popularSingers.forEach(singer => {
+        const card = document.createElement('div');
+        card.className = 'singer-card';
+        card.onclick = () => fetchSongs(singer.query, `🌟 ${singer.name} Top Hits`);
+        card.innerHTML = `
+          <img src="${singer.img}" alt="${singer.name}">
+          <h3>${singer.name}</h3>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
     function searchYouTube() {
       const q = document.getElementById('search-input').value;
       if (q.trim() !== '') {
-        fetchSongs(q);
+        fetchSongs(q, `🔍 Search: "${q}"`);
       }
     }
 
@@ -205,7 +341,6 @@
         isPlaying = true;
         updatePlayBtnUI();
       } else {
-        // Retry if API wasn't ready
         setTimeout(() => playSong(videoId), 500);
       }
     }
