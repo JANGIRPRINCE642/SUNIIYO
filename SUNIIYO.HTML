@@ -160,7 +160,6 @@
 
     <div class="player-screen">
       <div id="player"></div>
-      <audio id="audio-fallback"></audio>
     </div>
   </div>
 
@@ -185,7 +184,6 @@
   </div>
 
   <script>
-    // Verified Embeddable Playable Songs
     const playlist = [
       // 🔥 HARYANVI HITS
       { id: '1k8craCGpgs', title: 'Gypsy', artist: 'GD Kaur / Pranjal Dahiya', genre: '🔥 Haryanvi Hits', img: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300' },
@@ -198,7 +196,7 @@
       { id: 'hD0G-84T68U', title: 'Lover', artist: 'Diljit Dosanjh', genre: '⚡ Punjabi Hits', img: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300' },
 
       // ❤️ HINDI / BOLLYWOOD
-      { id: 'BddP6PYo2gs', title: 'Kesariya', artist: 'Arijit Singh', genre: '❤️️ Hindi / Bollywood', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300' },
+      { id: 'BddP6PYo2gs', title: 'Kesariya', artist: 'Arijit Singh', genre: '❤️ Hindi / Bollywood', img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=300' },
       { id: 'UMb8893N1oU', title: 'Tum Hi Ho', artist: 'Arijit Singh', genre: '❤️ Hindi / Bollywood', img: 'https://images.unsplash.com/photo-1445985543470-41fba5c3144a?w=300' },
 
       // 🪕 RAJASTHANI HITS
@@ -273,7 +271,7 @@
         playerVars: {
           'autoplay': 0,
           'controls': 0,
-          'origin': window.location.origin || 'http://localhost'
+          'origin': window.location.origin
         },
         events: {
           'onReady': () => { ytReady = true; },
@@ -386,8 +384,6 @@
     }
 
     function onPlayerError(event) {
-      console.warn("YouTube Embed Error Code:", event.data);
-      // Automatically skip to next song if YouTube blocks embedding
       setTimeout(() => { playNext(); }, 1500);
     }
 
