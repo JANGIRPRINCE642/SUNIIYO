@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Suniiyo Music - Fixed YouTube Engine</title>
+  <title>Suniiyo Music - Option 2 Player</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { background-color: #121212; color: #ffffff; padding-bottom: 110px; display: flex; flex-direction: column; min-height: 100vh; }
+    body { background-color: #121212; color: #ffffff; padding-bottom: 20px; display: flex; flex-direction: column; min-height: 100vh; }
     
-    .app-layout { display: flex; flex: 1; min-height: calc(100vh - 110px); }
+    .app-layout { display: flex; flex: 1; min-height: 100vh; }
 
+    /* Sidebar Navigation */
     sidebar {
       width: 240px;
       background-color: #000000;
@@ -44,6 +45,7 @@
 
     .nav-divider { height: 1px; background: #282828; margin: 10px 0; }
 
+    /* Main Area */
     .main-content { flex: 1; padding: 20px; background: #121212; overflow-y: auto; }
 
     .search-container { display: flex; gap: 10px; max-width: 600px; margin-bottom: 25px; }
@@ -60,6 +62,7 @@
 
     .section-title { font-size: 22px; margin-bottom: 20px; color: #1db954; border-left: 4px solid #1db954; padding-left: 10px; }
     
+    /* Grid Layouts */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
 
     .card { background: #181818; padding: 12px; border-radius: 10px; border: 1px solid #282828; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; }
@@ -74,28 +77,38 @@
     .singer-card img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; border: 2px solid #1db954; }
     .singer-card h3 { font-size: 15px; color: #fff; }
 
-    .player-bar { 
-      position: fixed; 
-      bottom: 0; 
-      left: 0; 
-      width: 100%; 
-      background: #181818; 
-      border-top: 2px solid #1db954; 
-      padding: 10px 20px; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      z-index: 1000; 
-      gap: 15px;
-      height: 95px;
+    /* Active Player Screen Overlay */
+    .player-view {
+      display: none;
+      background: #181818;
+      border: 1px solid #282828;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
     }
 
-    .mini-info { display: flex; align-items: center; gap: 12px; min-width: 200px; }
-    .mini-thumb { width: 55px; height: 55px; border-radius: 6px; object-fit: cover; }
-    .song-info h4 { color: #1db954; font-size: 14px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .song-info p { color: #aaaaaa; font-size: 12px; }
+    .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .player-header h3 { color: #1db954; }
+    .close-player-btn { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    .close-player-btn:hover { background: #1db954; color: #000; }
 
-    .yt-player-box { width: 1px; height: 1px; opacity: 0; position: absolute; pointer-events: none; }
+    .iframe-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      height: 0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .iframe-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
 
     @media (max-width: 768px) {
       .app-layout { flex-direction: column; }
@@ -105,7 +118,6 @@
       .nav-divider { display: none; }
     }
   </style>
-  <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
 
@@ -113,7 +125,7 @@
     <sidebar>
       <div class="logo-container">
         <h1>Suniiyo Music</h1>
-        <p>YouTube Audio Engine (Fixed)</p>
+        <p>Direct Player Engine</p>
       </div>
 
       <button class="nav-btn back-btn" onclick="goBack()">⬅ Back</button>
@@ -134,28 +146,25 @@
         <input type="text" id="search-input" class="search-box" placeholder="🔍 Search songs or singers..." onkeyup="filterSongs()">
       </div>
 
-      <div class="section-title" id="results-title">🏠 Home - Recommended Songs</div>
-      <div class="grid" id="songs-grid"></div>
-    </div>
-  </div>
-
-  <div class="player-bar">
-    <div class="mini-info">
-      <img id="mini-img" class="mini-thumb" src="https://img.youtube.com/vi/rKppEIgoKqo/hqdefault.jpg" alt="Cover">
-      <div class="song-info">
-        <h4 id="song-title">Circle</h4>
-        <p id="artist-name">Dhandha Nyoliwala</p>
+      <!-- Player View Section -->
+      <div class="player-view" id="player-screen">
+        <div class="player-header">
+          <h3 id="current-playing-title">Playing Song</h3>
+          <button class="close-player-btn" onclick="closePlayer()">❌ Close Player</button>
+        </div>
+        <div class="iframe-container" id="iframe-box"></div>
       </div>
-    </div>
 
-    <!-- Hidden YouTube Audio Engine Embed -->
-    <div class="yt-player-box">
-      <div id="yt-player"></div>
+      <!-- Grid Content -->
+      <div id="content-area">
+        <div class="section-title" id="results-title">🏠 Home - Recommended Songs</div>
+        <div class="grid" id="songs-grid"></div>
+      </div>
     </div>
   </div>
 
   <script>
-    // Strict Verified YouTube Video IDs (No Shorts / No Mismapping)
+    // Strict Verified YouTube IDs (Exact Song Mapping)
     const masterSongs = [
       // 🔥 Haryanvi
       { id: 'h1', title: 'Circle', artist: 'Dhandha Nyoliwala', genre: 'haryanvi', ytId: 'P13L1y74Nno', img: 'https://img.youtube.com/vi/P13L1y74Nno/hqdefault.jpg' },
@@ -186,24 +195,7 @@
       { name: "Karan Aujla", genre: "punjabi", img: "https://img.youtube.com/vi/cER93M4_kK0/hqdefault.jpg" }
     ];
 
-    let ytPlayer = null;
-    let currentSongs = [];
     let historyStack = [];
-
-    function onYouTubeIframeAPIReady() {
-      ytPlayer = new YT.Player('yt-player', {
-        height: '1',
-        width: '1',
-        playerVars: { 'autoplay': 0, 'controls': 0 },
-        events: {
-          'onError': onPlayerError
-        }
-      });
-    }
-
-    function onPlayerError(event) {
-      console.warn("YouTube Player error:", event.data);
-    }
 
     window.onload = function() {
       loadTab('home');
@@ -220,6 +212,7 @@
         historyStack.push(tab);
       }
 
+      closePlayer();
       setActiveBtn(tab);
       document.getElementById('search-input').value = '';
 
@@ -236,6 +229,11 @@
     }
 
     function goBack() {
+      if (document.getElementById('player-screen').style.display === 'block') {
+        closePlayer();
+        return;
+      }
+
       if (historyStack.length > 1) {
         historyStack.pop();
         const prevTab = historyStack[historyStack.length - 1];
@@ -246,7 +244,6 @@
     }
 
     function renderSongsList(songs, title) {
-      currentSongs = songs;
       document.getElementById('results-title').innerText = title;
       const grid = document.getElementById('songs-grid');
       grid.innerHTML = '';
@@ -256,14 +253,14 @@
         return;
       }
 
-      songs.forEach((song, idx) => {
+      songs.forEach((song) => {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
           <img src="${song.img}" alt="Thumb">
           <h3>${song.title}</h3>
           <p>${song.artist}</p>
-          <button class="play-btn" onclick="playSongByExactId('${song.ytId}', '${song.title}', '${song.artist}', '${song.img}')">▶ Play Song</button>
+          <button class="play-btn" onclick="playSongScreen('${song.ytId}', '${song.title} - ${song.artist}')">▶ Play Song</button>
         `;
         grid.appendChild(card);
       });
@@ -295,17 +292,18 @@
       renderSongsList(filtered, `🔍 Search: "${q}"`);
     }
 
-    function playSongByExactId(ytId, title, artist, img) {
-      document.getElementById('song-title').innerText = title;
-      document.getElementById('artist-name').innerText = artist;
-      document.getElementById('mini-img').src = img;
+    function playSongScreen(ytId, displayTitle) {
+      document.getElementById('current-playing-title').innerText = "▶ Now Playing: " + displayTitle;
+      const iframeBox = document.getElementById('iframe-box');
+      iframeBox.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      
+      document.getElementById('player-screen').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-      if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-        ytPlayer.loadVideoById(ytId);
-      } else {
-        // Fallback IFrame initialization if API is delayed
-        document.getElementById('yt-player').innerHTML = `<iframe width="1" height="1" src="https://www.youtube.com/embed/${ytId}?autoplay=1" frameborder="0" allow="autoplay"></iframe>`;
-      }
+    function closePlayer() {
+      document.getElementById('player-screen').style.display = 'none';
+      document.getElementById('iframe-box').innerHTML = '';
     }
   </script>
 </body>
