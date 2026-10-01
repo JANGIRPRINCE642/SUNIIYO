@@ -41,7 +41,7 @@
     .card { background: #181818; padding: 12px; border-radius: 8px; border: 1px solid #282828; display: flex; flex-direction: column; justify-content: space-between; }
     .card:hover { background: #282828; }
     .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 10px; }
-    .card h3 { font-size: 14px; margin-bottom: 5px; height: 36px; overflow: hidden; }
+    .card h3 { font-size: 14px; margin-bottom: 5px; height: 36px; overflow: hidden; line-height: 1.2; }
     .card p { color: #b3b3b3; font-size: 12px; margin-bottom: 10px; }
     .play-btn { background-color: #1db954; color: white; border: none; padding: 8px; border-radius: 20px; cursor: pointer; font-weight: bold; width: 100%; }
 
@@ -73,25 +73,24 @@
     .seek-container { display: flex; align-items: center; gap: 8px; width: 100%; font-size: 11px; color: #aaa; }
     .seek-bar { flex-grow: 1; accent-color: #1db954; cursor: pointer; }
 
-    .player-screen { width: 1px; height: 1px; opacity: 0; position: absolute; }
+    /* YouTube Hidden Player */
+    .player-screen { width: 1px; height: 1px; opacity: 0.01; position: absolute; pointer-events: none; }
   </style>
 </head>
 <body>
 
   <header>
     <h1>Suniiyo Music</h1>
-    <p>Search & Stream Any Song from YouTube Live</p>
+    <p>Search & Stream Any Song Live</p>
     <div class="search-container">
-      <input type="text" id="search-input" class="search-box" placeholder="🔍 Search any song or singer (e.g. Sidhu Moosewala, Diler Kharkiya)..." onkeydown="if(event.key==='Enter') searchYouTube()">
+      <input type="text" id="search-input" class="search-box" placeholder="🔍 Search any song or singer..." onkeydown="if(event.key==='Enter') searchYouTube()">
       <button class="search-btn" onclick="searchYouTube()">Search</button>
     </div>
   </header>
 
   <div class="container">
-    <div class="section-title" id="results-title">🔥 Trending Hits</div>
-    <div class="grid" id="songs-grid">
-      <!-- Search Results Dynamic Here -->
-    </div>
+    <div class="section-title" id="results-title">🔥 Latest Songs</div>
+    <div class="grid" id="songs-grid"></div>
   </div>
 
   <div class="player-bar">
@@ -125,31 +124,33 @@
   <script>
     const YOUTUBE_API_KEY = 'AIzaSyDF3IzzrvxyCWmnrRiajzttXSOk4FqCbxE';
     let currentPlaylist = [];
-    let currentIndex = 0;
     let ytPlayer;
     let isPlaying = false;
     let ytReady = false;
 
-    // Load Initial Hits on Page Load
     window.onload = function() {
-      fetchSongs('Haryanvi Punjabi Hindi Rajasthani songs');
+      fetchSongs('Latest Haryanvi Songs');
     };
 
     async function fetchSongs(query) {
       document.getElementById('results-title').innerText = `Results for: "${query}"`;
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=16&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`;
       
       try {
         const res = await fetch(url);
         const data = await res.json();
-        if (data.items) {
-          currentPlaylist = data.items.map(item => ({
-            id: item.id.videoId,
-            title: item.snippet.title,
-            artist: item.snippet.channelTitle,
-            img: item.snippet.thumbnails.high.url
-          }));
+        if (data.items && data.items.length > 0) {
+          currentPlaylist = data.items
+            .filter(item => item.id && item.id.videoId) // Valid videos only
+            .map(item => ({
+              id: item.id.videoId,
+              title: item.snippet.title,
+              artist: item.snippet.channelTitle,
+              img: item.snippet.thumbnails.high ? item.snippet.thumbnails.high.url : item.snippet.thumbnails.default.url
+            }));
           renderSongs(currentPlaylist);
+        } else {
+          document.getElementById('songs-grid').innerHTML = '<p style="grid-column:1/-1; text-align:center;">No songs found. Try another search!</p>';
         }
       } catch (err) {
         console.error("YouTube API Error:", err);
@@ -166,14 +167,14 @@
     function renderSongs(songs) {
       const grid = document.getElementById('songs-grid');
       grid.innerHTML = '';
-      songs.forEach((song, idx) => {
+      songs.forEach((song) => {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
           <img src="${song.img}" alt="Thumb">
           <h3>${song.title}</h3>
           <p>${song.artist}</p>
-          <button class="play-btn" onclick="playSong(${idx})">▶ Play Song</button>
+          <button class="play-btn" onclick="playSong('${song.id}')">▶ Play Song</button>
         `;
         grid.appendChild(card);
       });
@@ -183,8 +184,7 @@
       ytPlayer = new YT.Player('player', {
         height: '100%',
         width: '100%',
-        videoId: '',
-        playerVars: { 'autoplay': 1, 'controls': 0 },
+        playerVars: { 'autoplay': 1, 'controls': 0, 'playsinline': 1 },
         events: {
           'onReady': () => { ytReady = true; },
           'onStateChange': onPlayerStateChange
@@ -192,17 +192,21 @@
       });
     }
 
-    function playSong(idx) {
-      currentIndex = idx;
-      const song = currentPlaylist[idx];
+    function playSong(videoId) {
+      const song = currentPlaylist.find(s => s.id === videoId);
+      if (!song) return;
+
       document.getElementById('song-title').innerText = song.title;
       document.getElementById('artist-name').innerText = song.artist;
       document.getElementById('mini-img').src = song.img;
 
       if (ytPlayer && ytReady) {
-        ytPlayer.loadVideoById(song.id);
+        ytPlayer.loadVideoById(videoId);
         isPlaying = true;
         updatePlayBtnUI();
+      } else {
+        // Retry if API wasn't ready
+        setTimeout(() => playSong(videoId), 500);
       }
     }
 
@@ -223,7 +227,7 @@
     }
 
     function skipTime(sec) {
-      if (ytPlayer && ytReady) {
+      if (ytPlayer && ytReady && ytPlayer.getCurrentTime) {
         ytPlayer.seekTo(ytPlayer.getCurrentTime() + sec, true);
       }
     }
